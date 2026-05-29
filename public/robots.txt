@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://lumina-ai-blog.netlify.app
+
+# Sitemaps
+Sitemap: https://lumina-ai-blog.netlify.app/sitemap.xml
