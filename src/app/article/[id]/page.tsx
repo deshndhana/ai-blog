@@ -3,6 +3,7 @@ import ArticleViewer from '@/components/ArticleViewer';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import Navbar from '@/components/Navbar';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -48,11 +49,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <nav className="navbar">
-        <div className="container">
-          <Link href="/" className="logo gradient-text">Lumina AI</Link>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="container" style={{ maxWidth: '900px', marginBottom: '4rem' }}>
         <ArticleViewer article={article} />

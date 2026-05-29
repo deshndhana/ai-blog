@@ -1,6 +1,7 @@
 import { getArticles } from '@/lib/api';
 import ArticleList from '@/components/ArticleList';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 export default async function Home() {
   const articles = await getArticles();
@@ -12,11 +13,7 @@ export default async function Home() {
 
   return (
     <>
-      <nav className="navbar">
-        <div className="container">
-          <div className="logo gradient-text">Lumina AI</div>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="container">
         <div style={{ textAlign: 'center', marginBottom: '4rem' }} className="animate-fade-in">

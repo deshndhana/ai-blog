@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [articles, setArticles] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -45,14 +47,24 @@ export default function AdminPage() {
     }
   };
 
+  const handleEdit = (article: any) => {
+    setEditingId(article.id);
+    setTitle(article.title);
+    setTitleSinhala(article.titleSinhala || '');
+    setImage(article.image);
+    setContent(article.content);
+    setContentSinhala(article.contentSinhala || '');
+    setIsAdding(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     // Auto-generate image if not provided
-    const imageUrl = image || `https://picsum.photos/seed/${Date.now()}/800/600`;
+    const imageUrl = image || `https://picsum.photos/seed/${Date.now()}/1200/600`;
 
-    const newArticle = {
+    const updates = {
       title,
       titleSinhala: titleSinhala || undefined,
       image: imageUrl,
@@ -60,14 +72,24 @@ export default function AdminPage() {
       contentSinhala: contentSinhala || undefined,
     };
 
-    const res = await fetch('/api/articles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newArticle),
-    });
+    let res;
+    if (editingId) {
+      res = await fetch(`/api/articles/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+    } else {
+      res = await fetch('/api/articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+    }
 
     if (res.ok) {
       setIsAdding(false);
+      setEditingId(null);
       setTitle('');
       setTitleSinhala('');
       setImage('');
@@ -75,7 +97,7 @@ export default function AdminPage() {
       setContentSinhala('');
       fetchArticles();
     } else {
-      alert('Failed to add article');
+      alert('Failed to save article');
     }
     setLoading(false);
   };
@@ -105,32 +127,42 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="admin-layout animate-fade-in">
-      <div className="admin-sidebar glass" style={{ margin: '1rem', borderRadius: '16px' }}>
+    <>
+    <Navbar />
+    <div className="admin-layout animate-fade-in container" style={{ marginTop: '2rem' }}>
+      <div className="admin-sidebar glass" style={{ margin: '1rem 0', borderRadius: '16px' }}>
         <h2 className="gradient-text" style={{ marginBottom: '2rem' }}>Lumina Admin</h2>
         <ul style={{ listStyle: 'none' }}>
           <li style={{ marginBottom: '1rem' }}>
             <button 
               className={!isAdding ? "btn" : "btn btn-secondary"} 
               style={{ width: '100%', textAlign: 'left' }}
-              onClick={() => setIsAdding(false)}
+              onClick={() => {
+                setIsAdding(false);
+                setEditingId(null);
+              }}
             >
               Dashboard
             </button>
           </li>
           <li style={{ marginBottom: '1rem' }}>
             <button 
-              className={isAdding ? "btn" : "btn btn-secondary"} 
+              className={isAdding && !editingId ? "btn" : "btn btn-secondary"} 
               style={{ width: '100%', textAlign: 'left' }}
-              onClick={() => setIsAdding(true)}
+              onClick={() => {
+                setIsAdding(true);
+                setEditingId(null);
+                setTitle('');
+                setTitleSinhala('');
+                setImage('');
+                setContent('');
+                setContentSinhala('');
+              }}
             >
               + Add Article
             </button>
           </li>
         </ul>
-        <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-          <Link href="/" className="btn btn-secondary" style={{ width: '100%' }}>View Site</Link>
-        </div>
       </div>
 
       <div className="admin-content">
@@ -159,6 +191,7 @@ export default function AdminPage() {
                       </td>
                       <td>{new Date(article.createdAt).toLocaleDateString()}</td>
                       <td>
+                        <button onClick={() => handleEdit(article)} className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', marginRight: '0.5rem' }}>Edit</button>
                         <button onClick={() => handleDelete(article.id)} className="btn btn-danger" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Delete</button>
                       </td>
                     </tr>
@@ -169,7 +202,7 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="glass" style={{ padding: '2rem', maxWidth: '800px' }}>
-            <h2 style={{ marginBottom: '2rem' }}>Create New Article</h2>
+            <h2 style={{ marginBottom: '2rem' }}>{editingId ? 'Edit Article' : 'Create New Article'}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>English Title</label>
@@ -185,19 +218,20 @@ export default function AdminPage() {
               </div>
               <div className="form-group">
                 <label>English Content</label>
-                <textarea rows={6} value={content} onChange={e => setContent(e.target.value)} required></textarea>
+                <textarea rows={10} value={content} onChange={e => setContent(e.target.value)} required></textarea>
               </div>
               <div className="form-group">
                 <label>Sinhala Content (Optional)</label>
-                <textarea rows={6} value={contentSinhala} onChange={e => setContentSinhala(e.target.value)}></textarea>
+                <textarea rows={10} value={contentSinhala} onChange={e => setContentSinhala(e.target.value)}></textarea>
               </div>
               <button type="submit" className="btn" disabled={loading}>
-                {loading ? 'Saving...' : 'Publish Article'}
+                {loading ? 'Saving...' : (editingId ? 'Update Article' : 'Publish Article')}
               </button>
             </form>
           </div>
         )}
       </div>
     </div>
+    </>
   );
 }

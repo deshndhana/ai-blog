@@ -11,6 +11,7 @@ export interface Article {
   content: string;
   contentSinhala?: string;
   createdAt: string;
+  likes?: number;
 }
 
 const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
@@ -80,6 +81,36 @@ export async function deleteArticle(id: string): Promise<boolean> {
   if (filtered.length !== articles.length) {
     saveLocalArticles(filtered);
     return true;
+  }
+  return false;
+}
+
+export async function updateArticle(id: string, updates: Partial<Omit<Article, 'id' | 'createdAt'>>): Promise<boolean> {
+  if (isConfigured && db) {
+    await setDoc(doc(db, "articles", id), updates, { merge: true });
+    return true;
+  }
+
+  const articles = getLocalArticles();
+  const index = articles.findIndex(a => a.id === id);
+  if (index !== -1) {
+    articles[index] = { ...articles[index], ...updates };
+    saveLocalArticles(articles);
+    return true;
+  }
+  return false;
+}
+
+export async function likeArticle(id: string): Promise<boolean> {
+  if (isConfigured && db) {
+    const docRef = doc(db, "articles", id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const newLikes = (data.likes || 0) + 1;
+      await setDoc(docRef, { likes: newLikes }, { merge: true });
+      return true;
+    }
   }
   return false;
 }
